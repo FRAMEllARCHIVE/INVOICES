@@ -248,7 +248,7 @@ function deleteRow() {
     let rows = tableBody.querySelectorAll('tr');
     
     if (rows.length > 0) {
-        tableBody.removeChild(rows[rows.length - 1]); // Remove the last row
+        tableBody.removeChild(rows[rows.length - 1]);
         updateTotal();
         updateQRCode();
     }
@@ -260,7 +260,7 @@ function addRow(button) {
     let newRow = row.cloneNode(true);
 
     newRow.querySelectorAll('.editable').forEach(cell => {
-        cell.textContent = ''; // Clear the content for the new row
+        cell.textContent = '';
         cell.setAttribute('contenteditable', 'true');
         cell.addEventListener('click', function() {
             if (!this.hasAttribute('contenteditable')) {
@@ -276,7 +276,6 @@ function addRow(button) {
         });
     });
 
-    // Re-attach event listeners to buttons in the new row
     newRow.querySelectorAll('.row-buttons button').forEach(button => {
         if (button.textContent === 'Delete') {
             button.addEventListener('click', function() {

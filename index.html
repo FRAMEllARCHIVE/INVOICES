@@ -293,6 +293,18 @@ function addRow(button) {
     updateQRCode();
 }
 
+        
+function showToggleButton() {
+    const toggleButton = document.querySelector('.toggle-button');
+    toggleButton.style.display = 'block';
+
+    setTimeout(() => {
+        toggleButton.style.display = 'none';
+    }, 5000);
+}
+
+document.querySelector('.container').addEventListener('click', showToggleButton);
+
     </script>
 </body>
 </html>

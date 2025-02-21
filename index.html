@@ -1,1 +1,299 @@
-invoices
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .container {
+            width: 80%;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+        }
+.container:hover .toggle-button {
+    display: block;
+}
+        .header {
+            text-align: center;
+            padding: 40px 0 20px 0;
+        }
+        .header img {
+            max-width: 300px;
+        }
+        .invoice-details {
+            margin: 20px 0;
+        }
+        .invoice-details h2 {
+            margin: 0;
+            padding: 0;
+        }
+        .invoice-details p {
+            margin: 5px 0;
+        }
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .invoice-table th, .invoice-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            position: relative;
+        }
+        .invoice-table th {
+            background-color: #f4f4f4;
+        }
+        .total {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .qr-code {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 0.8em;
+            color: #555;
+        }
+        .editable {
+            cursor: pointer;
+            border-bottom: 1px dashed #aaa;
+        }
+        .toggle-button {
+    display: none;
+            margin: 20px auto 0 auto;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 16px;
+        }
+        .toggle-button:hover {
+            background-color: #0056b3;
+        }
+
+.bank-details {
+    margin-top: 44px;
+    text-align: center;
+    display: none;
+    letter-spacing: 1px;
+    margin-bottom: 44px;
+}
+        .row-buttons {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+        }
+        .row-buttons button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: #fff;
+            cursor: pointer;
+        }
+        .row-buttons button:hover {
+            background-color: #c82333;
+        }
+        .invoice-table tr:hover .row-buttons {
+            display: inline;
+        }
+        .description-column {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="logo.png" alt="DIV STUDIOS Logo">
+        </div>
+        <div class="invoice-details">
+            <h2 class="editable" id="invoice-title">Invoice</h2>
+            <p class="editable" id="invoice-date">Date: <span id="current-date"></span></p>
+            <p class="editable" id="invoice-from">From: DIV STUDIOS</p>
+        </div>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Hours</th>
+                    <th>Rate</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="invoice-items">
+                <tr>
+                    <td class="editable description-column">Consultation for web development
+                        <div class="row-buttons">
+                            <button onclick="deleteRow()">Delete</button>
+                            <button onclick="addRow(this)">Add</button>
+                        </div>
+                    </td>
+                    <td class="editable">1</td>
+                    <td class="editable">R225.00/hr</td>
+                    <td class="editable">R225.00</td>
+                </tr>
+             </tbody>
+        </table>
+        <div class="total">
+            <h3 id="invoice-total">Total: R450.00</h3>
+        </div>
+        <div class="qr-code" id="qr-code"></div>
+        <div class="bank-details" id="bank-details">
+            <p><strong>Bank Name:</strong> STANDARD BANK</p>
+            <p><strong>Account Number:</strong> 25 270 393 6</p>
+            <p><strong>Branch Code:</strong> 3826</p>
+            <p><strong>SWIFT code:</strong> SBZAZAJJ</p>
+            <p><strong>Account Holder:</strong> THOMAS DE BEER</p>
+        </div>
+        <button class="toggle-button" onclick="togglePaymentMethod()">EFT</button>
+        <div class="footer">
+            <p>Thank you for your business!</p>
+            <p><strong>Legal Notice:</strong> This invoice is subject to the terms and conditions outlined in the agreement between DIV STUDIOS and the client. DIV STUDIOS is not responsible for any errors or omissions in this invoice.</p>
+            <p>Payment is due within 30 days of the invoice date. Late payments may be subject to a late fee of 10% per month.</p>
+            <p>Please contact us if you have any questions about this invoice.</p>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.editable').forEach(item => {
+            item.addEventListener('click', function() {
+                if (!this.hasAttribute('contenteditable')) {
+                    this.setAttribute('contenteditable', 'true');
+                    this.focus();
+                }
+            });
+
+            item.addEventListener('blur', function() {
+                this.removeAttribute('contenteditable');
+                updateTotal();
+                updateQRCode();
+            });
+        });
+
+        function updateTotal() {
+            let total = 0;
+            document.querySelectorAll('#invoice-items tr').forEach(row => {
+                let hours = parseFloat(row.cells[1].textContent);
+                let rate = parseFloat(row.cells[2].textContent.replace('R', '').replace('/hr', ''));
+                let rowTotal = hours * rate;
+                row.cells[3].textContent = 'R' + rowTotal.toFixed(2);
+                total += rowTotal;
+            });
+            document.getElementById('invoice-total').textContent = 'Total: R' + total.toFixed(2);
+            return total.toFixed(2);
+        }
+
+        function updateQRCode() {
+            let totalAmount = updateTotal();
+            let qrCodeUrl = `https://pos.snapscan.io/qr/w1hRjQUu?amount=${(totalAmount * 100).toFixed(0)}`;
+            const qr = qrcode(0, 'M');
+            qr.addData(qrCodeUrl);
+            qr.make();
+            document.getElementById('qr-code').innerHTML = qr.createImgTag(5);
+        }
+
+        function getCurrentDate() {
+            let today = new Date();
+            let year = today.getFullYear();
+            let month = String(today.getMonth() + 1).padStart(2, '0');
+            let day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        document.getElementById('current-date').textContent = getCurrentDate();
+        updateQRCode();
+
+        function togglePaymentMethod() {
+            let qrCodeDiv = document.getElementById('qr-code');
+            let bankDetailsDiv = document.getElementById('bank-details');
+            let toggleButton = document.querySelector('.toggle-button');
+
+            if (qrCodeDiv.style.display === 'none') {
+                qrCodeDiv.style.display = 'block';
+                bankDetailsDiv.style.display = 'none';
+                toggleButton.textContent = 'EFT';
+            } else {
+                qrCodeDiv.style.display = 'none';
+                bankDetailsDiv.style.display = 'block';
+                toggleButton.textContent = 'SNAPSCAN QR';
+            }
+        }
+
+function deleteRow() {
+    let tableBody = document.getElementById('invoice-items');
+    let rows = tableBody.querySelectorAll('tr');
+    
+    if (rows.length > 0) {
+        tableBody.removeChild(rows[rows.length - 1]); // Remove the last row
+        updateTotal();
+        updateQRCode();
+    }
+}
+
+
+function addRow(button) {
+    let row = button.closest('tr');
+    let newRow = row.cloneNode(true);
+
+    newRow.querySelectorAll('.editable').forEach(cell => {
+        cell.textContent = ''; // Clear the content for the new row
+        cell.setAttribute('contenteditable', 'true');
+        cell.addEventListener('click', function() {
+            if (!this.hasAttribute('contenteditable')) {
+                this.setAttribute('contenteditable', 'true');
+                this.focus();
+            }
+        });
+
+        cell.addEventListener('blur', function() {
+            this.removeAttribute('contenteditable');
+            updateTotal();
+            updateQRCode();
+        });
+    });
+
+    // Re-attach event listeners to buttons in the new row
+    newRow.querySelectorAll('.row-buttons button').forEach(button => {
+        if (button.textContent === 'Delete') {
+            button.addEventListener('click', function() {
+                deleteRow(this);
+            });
+        } else if (button.textContent === 'Add') {
+            button.addEventListener('click', function() {
+                addRow(this);
+            });
+        }
+    });
+
+    row.parentNode.insertBefore(newRow, row.nextSibling);
+    updateTotal();
+    updateQRCode();
+}
+
+    </script>
+</body>
+</html>
